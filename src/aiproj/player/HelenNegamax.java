@@ -92,7 +92,7 @@ public class HelenNegamax {
 		if (player == Player.HPLAYER) {
 			d = 1;
 		}else {
-			d = 1;
+			d = 10;
 		}
 		Move move = getBestMove(d);
 		makeMove(move);
@@ -146,35 +146,35 @@ public class HelenNegamax {
 		Collection<Move> moves = new ArrayList<Move>();
 
 		for (int i = 0; i < dimension; i++) {
-			for (int j = 0; j < dimension; j++) {
+			for (int j = dimension - 1; j >= 0; j--) {
 				Piece piece = board[i][j];
 				if (player == Player.HPLAYER && piece == Piece.HSLIDER) {
+					Move moveRight = new Move(i, j, Direction.RIGHT);
 					Move moveUp = new Move(i, j, Direction.UP);
 					Move moveDown = new Move(i, j, Direction.DOWN);
-					Move moveRight = new Move(i, j, Direction.RIGHT);
 
+					if (canMove(moveRight)) {
+						moves.add(moveRight);
+					}
 					if (canMove(moveUp)) {
 						moves.add(moveUp);
 					}
 					if (canMove(moveDown)) {
 						moves.add(moveDown);
 					}
-					if (canMove(moveRight)) {
-						moves.add(moveRight);
-					}
 				} else if (player == Player.VPLAYER && piece == Piece.VSLIDER) {
+					Move moveUp = new Move(i, j, Direction.UP);
 					Move moveRight = new Move(i, j, Direction.RIGHT);
 					Move moveLeft = new Move(i, j, Direction.LEFT);
-					Move moveUp = new Move(i, j, Direction.UP);
 
+					if (canMove(moveUp)) {
+						moves.add(moveUp);
+					}
 					if (canMove(moveRight)) {
 						moves.add(moveRight);
 					}
 					if (canMove(moveLeft)) {
 						moves.add(moveLeft);
-					}
-					if (canMove(moveUp)) {
-						moves.add(moveUp);
 					}
 				}
 			}
@@ -223,7 +223,7 @@ public class HelenNegamax {
 
 	private double evaluate() {
 		int hsliders = 0, vsliders = 0;
-		int hscore = 1, vscore = 1;
+		int hscore = 0, vscore = 0;
 
 		for (int i = 0; i < dimension; i++) {
 			for (int j = 0; j < dimension; j++) {
@@ -238,15 +238,17 @@ public class HelenNegamax {
 			}
 		}
 
-		hscore += dimension * (dimension - hsliders - 1) * 2;
-		vscore += dimension * (dimension - vsliders - 1) * 2;
+		hscore += (dimension + 1) * (dimension - hsliders - 1);
+		vscore += (dimension + 1) * (dimension - vsliders - 1);
+		
+		hscore = vsliders == 0 ? 0 : hscore;
+		vscore = hsliders == 0 ? 0 : vscore;
 
 		return player == Player.HPLAYER ? hscore - vscore : vscore - hscore;
 	}
 
 	private double maxEvaluateValue() {
-//		return dimension * (dimension - 1) + 2;
-		return 10000;
+		return (dimension + 1) * (dimension - 1) + 1;
 	}
 
 	private void makeMove(Move move) {
