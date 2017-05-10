@@ -1,12 +1,13 @@
 package aiproj.player;
 
 import java.util.*;
+import aiproj.slider.SliderPlayer;
 import aiproj.slider.Move;
 import aiproj.slider.Move.Direction;
 
-public class HelenNegamax {
+public class JoshuaPlayer implements SliderPlayer {
 
-	private static final int DEPTH = 4;
+	private static final int DEPTH = 10;
 
 	/** Enumeration of all of the possible states of a board position */
 	private static enum Piece {
@@ -21,11 +22,11 @@ public class HelenNegamax {
 		Move move;
 	}
 
-	private final int dimension;
-	private final Piece[][] board;
+	private int dimension;
+	private Piece[][] board;
 	private Player player;
 
-	public HelenNegamax(int dimension, String board, char player) {
+	public void init(int dimension, String board, char player) {
 		this.dimension = dimension;
 		this.board = initBoard(board);
 		this.player = player == 'H' ? Player.HPLAYER : Player.VPLAYER;
@@ -88,13 +89,7 @@ public class HelenNegamax {
 	}
 
 	public Move move() {
-		int d;
-		if (player == Player.HPLAYER) {
-			d = 1;
-		}else {
-			d = 10;
-		}
-		Move move = getBestMove(d);
+		Move move = getBestMove(DEPTH);
 		makeMove(move);
 		previousPlayer();
 		return move == null ? null : revertMove(move);
@@ -145,36 +140,43 @@ public class HelenNegamax {
 	private Collection<Move> getPossibleMoves() {
 		Collection<Move> moves = new ArrayList<Move>();
 
-		for (int i = 0; i < dimension; i++) {
+		for (int i = dimension - 1; i >= 0; i--) {
 			for (int j = dimension - 1; j >= 0; j--) {
 				Piece piece = board[i][j];
 				if (player == Player.HPLAYER && piece == Piece.HSLIDER) {
 					Move moveRight = new Move(i, j, Direction.RIGHT);
-					Move moveUp = new Move(i, j, Direction.UP);
 					Move moveDown = new Move(i, j, Direction.DOWN);
+					Move moveUp = new Move(i, j, Direction.UP);
 
 					if (canMove(moveRight)) {
 						moves.add(moveRight);
-					}
-					if (canMove(moveUp)) {
-						moves.add(moveUp);
 					}
 					if (canMove(moveDown)) {
 						moves.add(moveDown);
 					}
-				} else if (player == Player.VPLAYER && piece == Piece.VSLIDER) {
+					if (canMove(moveUp)) {
+						moves.add(moveUp);
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < dimension; i++) {
+			for (int j = dimension - 1; j >= 0; j--) {
+				Piece piece = board[i][j];
+				if (player == Player.VPLAYER && piece == Piece.VSLIDER) {
 					Move moveUp = new Move(i, j, Direction.UP);
-					Move moveRight = new Move(i, j, Direction.RIGHT);
 					Move moveLeft = new Move(i, j, Direction.LEFT);
+					Move moveRight = new Move(i, j, Direction.RIGHT);
 
 					if (canMove(moveUp)) {
 						moves.add(moveUp);
 					}
-					if (canMove(moveRight)) {
-						moves.add(moveRight);
-					}
 					if (canMove(moveLeft)) {
 						moves.add(moveLeft);
+					}
+					if (canMove(moveRight)) {
+						moves.add(moveRight);
 					}
 				}
 			}
@@ -218,7 +220,7 @@ public class HelenNegamax {
 			}
 		}
 
-		return hsliders * vsliders == 0 ? true : false;
+		return hsliders * vsliders == 0;
 	}
 
 	private double evaluate() {
@@ -231,16 +233,22 @@ public class HelenNegamax {
 				if (piece == Piece.HSLIDER) {
 					hsliders++;
 					hscore += j;
+					if (j < dimension - 1 && board[i][j + 1] != Piece.BLOCK) {
+						hscore--;
+					}
 				} else if (piece == Piece.VSLIDER) {
 					vsliders++;
 					vscore += dimension - i - 1;
+					if (i > 0 && board[i - 1][j] != Piece.BLOCK) {
+						vscore--;
+					}
 				}
 			}
 		}
 
-		hscore += (dimension + 1) * (dimension - hsliders - 1);
-		vscore += (dimension + 1) * (dimension - vsliders - 1);
-		
+		hscore += dimension * (dimension - hsliders - 1);
+		vscore += dimension * (dimension - vsliders - 1);
+
 		hscore = vsliders == 0 ? 0 : hscore;
 		vscore = hsliders == 0 ? 0 : vscore;
 
@@ -248,7 +256,7 @@ public class HelenNegamax {
 	}
 
 	private double maxEvaluateValue() {
-		return (dimension + 1) * (dimension - 1) + 1;
+		return (dimension) * (dimension - 1) + 1;
 	}
 
 	private void makeMove(Move move) {
