@@ -6,8 +6,8 @@ import aiproj.slider.Move;
 import aiproj.slider.Move.Direction;
 
 public class HelenPlayer implements SliderPlayer {
-	
-	private static final int DEPTH = 10;
+
+	private int depth = 10;
 
 	/** Enumeration of all of the possible states of a board position */
 	private static enum Piece {
@@ -89,19 +89,19 @@ public class HelenPlayer implements SliderPlayer {
 	}
 
 	public Move move() {
-		Move move = getBestMove(DEPTH);
+		Move move = getBestMove(depth);
 		makeMove(move);
 		previousPlayer();
 		return move == null ? null : revertMove(move);
 	}
 
-	public Move getBestMove(final int depth) {
+	public Move getBestMove(int depth) {
 		MoveWrapper wrapper = new MoveWrapper();
 		negamax(wrapper, depth, -maxEvaluateValue(), maxEvaluateValue());
 		return wrapper.move;
 	}
 
-	private double negamax(final MoveWrapper wrapper, final int depth, double alpha, double beta) {
+	private double negamax(MoveWrapper wrapper, int depth, double alpha, double beta) {
 		if (depth == 0 || finished()) {
 			return evaluate();
 		}
@@ -225,7 +225,7 @@ public class HelenPlayer implements SliderPlayer {
 
 	private double evaluate() {
 		int hsliders = 0, vsliders = 0;
-		int hscore = 1, vscore = 1;
+		int hscore = 0, vscore = 0;
 
 		for (int i = 0; i < dimension; i++) {
 			for (int j = 0; j < dimension; j++) {
@@ -233,9 +233,15 @@ public class HelenPlayer implements SliderPlayer {
 				if (piece == Piece.HSLIDER) {
 					hsliders++;
 					hscore += j;
+					if (j < dimension - 1 && board[i][j + 1] != Piece.BLOCK) {
+						hscore--;
+					}
 				} else if (piece == Piece.VSLIDER) {
 					vsliders++;
 					vscore += dimension - i - 1;
+					if (i > 0 && board[i - 1][j] != Piece.BLOCK) {
+						vscore--;
+					}
 				}
 			}
 		}
@@ -243,10 +249,10 @@ public class HelenPlayer implements SliderPlayer {
 		hscore += dimension * (dimension - hsliders - 1);
 		vscore += dimension * (dimension - vsliders - 1);
 
-		hscore = vsliders == 0 ? 1 : hscore;
-		vscore = hsliders == 0 ? 1 : vscore;
+		hscore = vsliders == 0 ? 0 : hscore;
+		vscore = hsliders == 0 ? 0 : vscore;
 
-		return player == Player.HPLAYER ? hscore / vscore : vscore / hscore;
+		return player == Player.HPLAYER ? hscore - vscore : vscore - hscore;
 	}
 
 	private double maxEvaluateValue() {
