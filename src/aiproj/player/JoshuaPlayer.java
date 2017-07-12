@@ -1,3 +1,4 @@
+// consider more
 package aiproj.player;
 
 import java.util.*;

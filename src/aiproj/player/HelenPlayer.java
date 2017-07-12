@@ -1,3 +1,4 @@
+// block minus 1
 package aiproj.player;
 
 import java.util.*;
